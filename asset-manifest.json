@@ -1,22 +1,22 @@
 {
   "files": {
-    "main.css": "/gv-targeterfassung-app/static/css/main.a352c0f8.chunk.css",
-    "main.js": "/gv-targeterfassung-app/static/js/main.5b0c24a1.chunk.js",
-    "main.js.map": "/gv-targeterfassung-app/static/js/main.5b0c24a1.chunk.js.map",
+    "main.css": "/gv-targeterfassung-app/static/css/main.21d7bd9c.chunk.css",
+    "main.js": "/gv-targeterfassung-app/static/js/main.e9959824.chunk.js",
+    "main.js.map": "/gv-targeterfassung-app/static/js/main.e9959824.chunk.js.map",
     "runtime-main.js": "/gv-targeterfassung-app/static/js/runtime-main.f620447b.js",
     "runtime-main.js.map": "/gv-targeterfassung-app/static/js/runtime-main.f620447b.js.map",
     "static/js/2.03269ec9.chunk.js": "/gv-targeterfassung-app/static/js/2.03269ec9.chunk.js",
     "static/js/2.03269ec9.chunk.js.map": "/gv-targeterfassung-app/static/js/2.03269ec9.chunk.js.map",
     "index.html": "/gv-targeterfassung-app/index.html",
-    "precache-manifest.07890e585f3d5377dc4515fadd40f47b.js": "/gv-targeterfassung-app/precache-manifest.07890e585f3d5377dc4515fadd40f47b.js",
+    "precache-manifest.6402706b4ba903dab789b07516ff86ec.js": "/gv-targeterfassung-app/precache-manifest.6402706b4ba903dab789b07516ff86ec.js",
     "service-worker.js": "/gv-targeterfassung-app/service-worker.js",
-    "static/css/main.a352c0f8.chunk.css.map": "/gv-targeterfassung-app/static/css/main.a352c0f8.chunk.css.map",
+    "static/css/main.21d7bd9c.chunk.css.map": "/gv-targeterfassung-app/static/css/main.21d7bd9c.chunk.css.map",
     "static/js/2.03269ec9.chunk.js.LICENSE.txt": "/gv-targeterfassung-app/static/js/2.03269ec9.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.f620447b.js",
     "static/js/2.03269ec9.chunk.js",
-    "static/css/main.a352c0f8.chunk.css",
-    "static/js/main.5b0c24a1.chunk.js"
+    "static/css/main.21d7bd9c.chunk.css",
+    "static/js/main.e9959824.chunk.js"
   ]
 }
