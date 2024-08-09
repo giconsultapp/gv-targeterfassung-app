@@ -516,6 +516,69 @@ const MainForm = ({ reff, row, setImportData, onSubmitSuccess, setOpen }) => {
     });
   };
 
+  const downloadPhoto = () => {
+    if (submissions.length === 0) {
+      console.error("No submissions available");
+      return;
+    }
+
+    const lastSubmission = submissions[submissions.length - 1];
+
+    const date = lastSubmission.currentDate.replace(/-/g, "");
+    let roundedMetWithoutLastDigit;
+
+    if (lastSubmission.met && lastSubmission.met.toString().length >= 3) {
+      const metAsNumber = parseFloat(lastSubmission.met);
+      const roundedMet = Math.round(metAsNumber / 10) * 10;
+      roundedMetWithoutLastDigit = Math.floor(roundedMet / 10);
+    } else {
+      roundedMetWithoutLastDigit = lastSubmission.met; // No rounding if met has 1 or 2 digits
+    }
+
+    let filename;
+
+    if (lastSubmission.mastnummer && lastSubmission.mastnummer.endsWith("N")) {
+      let mastnummer = lastSubmission.mastnummer;
+      mastnummer = mastnummer.trim().slice(0, -1);
+      filename = `${lastSubmission.streckennummer}_${lastSubmission.km},${roundedMetWithoutLastDigit}_${lastSubmission.seite}_${mastnummer}_${date}.jpg`;
+    } else if (
+      lastSubmission.selectedVermarkungstrager &&
+      lastSubmission.selectedVermarkungstrager !== "Sonstiges"
+    ) {
+      filename = `${lastSubmission.streckennummer}_${lastSubmission.km},${roundedMetWithoutLastDigit}_${lastSubmission.seite}_${lastSubmission.selectedVermarkungstrager}_${date}.jpg`;
+    } else if (lastSubmission.sonstiges2) {
+      filename = `${lastSubmission.streckennummer}_${lastSubmission.km},${roundedMetWithoutLastDigit}_${lastSubmission.seite}_${lastSubmission.sonstiges2}_${date}.jpg`;
+    } else if (lastSubmission.mastnummer) {
+      filename = `${lastSubmission.streckennummer}_${lastSubmission.km},${roundedMetWithoutLastDigit}_${lastSubmission.seite}_${lastSubmission.mastnummer}_${date}.jpg`;
+    } else {
+      console.error("Invalid submission data");
+      return;
+    }
+
+    if (lastSubmission.photo instanceof Blob) {
+      const url = window.URL.createObjectURL(lastSubmission.photo);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } else if (typeof lastSubmission.photo === "string") {
+      const base64Data = lastSubmission.photo.split(",")[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/jpeg" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    }
+  };
   const handleSuccessClose = (event, reason) => {
     if (reason === "clickaway") {
       return;
@@ -757,6 +820,7 @@ const MainForm = ({ reff, row, setImportData, onSubmitSuccess, setOpen }) => {
       </Box>
       <Buttons
         handleSubmit={handleSubmit}
+        downloadPhoto={downloadPhoto}
         downloadCombinedData={downloadCombinedData}
         downloadCombinedTodayData={downloadCombinedTodayData}
       />

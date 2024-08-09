@@ -24,6 +24,7 @@ const useStyles = makeStyles((theme) => ({
 
 const Buttons = ({
   handleSubmit,
+  downloadPhoto,
   downloadCombinedTodayData,
   downloadCombinedData,
 }) => {
@@ -43,6 +44,15 @@ const Buttons = ({
       <br />
       <br />
       <Box className={classes.buttonsContainer}>
+        <Button
+          variant="contained"
+          color="primary"
+          className={classes.button}
+          startIcon={<CloudDownloadIcon />}
+          onClick={() => downloadPhoto()}
+        >
+          Foto herunterladen
+        </Button>
         <Button
           variant="contained"
           color="primary"
