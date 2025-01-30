@@ -102,7 +102,7 @@ const App = () => {
     return csvContent;
   };
 
-  /*   const handleDownload = () => {
+  const handleDownload = () => {
     const csvContent = convertToCSV(importData);
 
     // Create a Blob and create a download link
@@ -114,7 +114,7 @@ const App = () => {
     // Simulate a click to trigger the download
     link.click();
   };
- */
+
   return (
     <div className={classnames(classes.root, "appWrapper")}>
       <CSVimport
@@ -133,7 +133,7 @@ const App = () => {
             setImportData={setImportData}
             colNames={colNames}
           />
-          {/*    {showDownloadButton && ( // Conditionally render the download button
+          {showDownloadButton && ( // Conditionally render the download button
             <Button
               variant="contained"
               color="primary"
@@ -144,7 +144,7 @@ const App = () => {
             >
               Tabelle herunterladen
             </Button>
-          )} */}
+          )}
         </>
       )}
     </div>

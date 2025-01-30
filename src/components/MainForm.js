@@ -144,47 +144,46 @@ const MainForm = ({ reff, row, setImportData, onSubmitSuccess, setOpen }) => {
     setselectedStatus(event.target.value);
   };
 
-  const handleSubmit = () => {
-    // Check if a photo is selected
+  const handleSubmit = async () => {
     if (!photo) {
       setErrorMessage("Bitte wählen Sie ein Foto aus, bevor Sie fortfahren.");
-      setSuccessMessage(""); // Clear any existing success message
+      setSuccessMessage("");
       return;
     }
-    // Check if streckennummer is empty
     if (!streckennummer) {
       setErrorMessage(
         "Bitte geben Sie die Streckennummer ein, bevor Sie fortfahren."
       );
-      setSuccessMessage(""); // Clear any existing success message
+      setSuccessMessage("");
       return;
     }
     if (!km & !met) {
       setErrorMessage(
         "Bitte geben Sie die Kilometrierung ein, bevor Sie fortfahren."
       );
-      setSuccessMessage(""); // Clear any existing success message
+      setSuccessMessage("");
       return;
     }
     if (!seite) {
       setErrorMessage("Bitte wählen Sie eine Seite aus, bevor Sie fortfahren.");
-      setSuccessMessage(""); // Clear any existing success message
+      setSuccessMessage("");
       return;
     }
     if (!mastnummer) {
       setErrorMessage(
         "Bitte geben Sie eine Mastnummer ein, bevor Sie fortfahren."
       );
-      setSuccessMessage(""); // Clear any existing success message
+      setSuccessMessage("");
       return;
     }
     if (!selectedStatus) {
       setErrorMessage(
         "Bitte wählen Sie einen Status aus, bevor Sie fortfahren."
       );
-      setSuccessMessage(""); // Clear any existing success message
+      setSuccessMessage("");
       return;
     }
+
     // Reset the form after a successful submission
     resetForm();
 
@@ -193,163 +192,109 @@ const MainForm = ({ reff, row, setImportData, onSubmitSuccess, setOpen }) => {
     reader.onload = async (event) => {
       const base64Photo = event.target.result;
       const maxSizeInBytes = 0.5 * 1024 * 1024; // 0.5 MB
-      let quality = 1;
-
-      // Create an Image object and set its source to the base64 representation of the photo
       const image = new Image();
       image.src = base64Photo;
 
       image.onload = async () => {
-        // Check if the photo size is smaller than or equal to 0.5 MB
-        if (event.total <= maxSizeInBytes) {
-          // Do nothing, the photo is already within the size limit
-          const vermarkungLabel = selectedVermarkungstrager
-            ? vermarkungOptions.find(
-                (option) => option.value === selectedVermarkungstrager
-              )?.label
-            : "";
+        const finalPhoto =
+          event.total <= maxSizeInBytes
+            ? base64Photo
+            : await compressPhoto(image);
 
-          const statusLabel = selectedStatus
-            ? statusOptions.find((option) => option.value === selectedStatus)
-                ?.label
-            : "";
+        const vermarkungLabel = selectedVermarkungstrager
+          ? vermarkungOptions.find(
+              (option) => option.value === selectedVermarkungstrager
+            )?.label
+          : "";
 
-          const newSubmission = {
-            punktnummer: punktnummer,
-            streckennummer: streckennummer,
-            km: km,
-            met: met,
-            seite: seite,
-            sonstiges: sonstiges,
-            mastnummer: mastnummer,
-            selectedVermarkungstrager: vermarkungLabel,
-            selectedStatus: statusLabel,
-            sonstiges2: sonstiges2,
-            gvp: gvp,
-            currentDate: currentDate,
-            photo: base64Photo,
-          };
+        const statusLabel = selectedStatus
+          ? statusOptions.find((option) => option.value === selectedStatus)
+              ?.label
+          : "";
 
-          // Save the new submission to IndexedDB
-          try {
-            const db = await openDatabase();
-            //await addSubmission(db, newSubmission);
-            let data = await getAllSubmissions(db);
-            // Check if there's an existing submission with the same Streckennummer, Punktnummer, Kilometrierung
-            const index = data.findIndex(
-              (submission) =>
-                submission.streckennummer === newSubmission.streckennummer &&
-                submission.km === newSubmission.km &&
-                submission.punktnummer === newSubmission.punktnummer &&
-                submission.met === newSubmission.met
-            );
-            console.log(index);
-            if (index !== -1) {
-              // If a matching submission is found, replace it with the new submission
-              await deleteSubmission(db, data[index].id);
-            }
-            // Add the new submission
-            await addSubmission(db, newSubmission);
-            setSubmissions(data);
-            setSuccessMessage("Erfolgreich hinzugefügt");
-            setOpen(false);
-            setSuccessOpen(true);
-          } catch (error) {
-            console.error("Error adding or fetching submission: ", error);
+        const newSubmission = {
+          punktnummer,
+          streckennummer,
+          km,
+          met,
+          seite,
+          sonstiges,
+          mastnummer,
+          selectedVermarkungstrager: vermarkungLabel,
+          selectedStatus: statusLabel,
+          sonstiges2,
+          gvp,
+          currentDate,
+          photo: finalPhoto,
+        };
+
+        try {
+          const db = await openDatabase();
+          let data = await getAllSubmissions(db);
+
+          const index = data.findIndex(
+            (submission) =>
+              submission.streckennummer === newSubmission.streckennummer &&
+              submission.km === newSubmission.km &&
+              submission.punktnummer === newSubmission.punktnummer &&
+              submission.met === newSubmission.met
+          );
+
+          if (index !== -1) {
+            await deleteSubmission(db, data[index].id);
           }
-        } else {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
 
-          canvas.width = image.width;
-          canvas.height = image.height;
+          await addSubmission(db, newSubmission);
 
-          ctx.drawImage(image, 0, 0, image.width, image.height);
+          // Fetch updated submissions to ensure the current one is included
+          data = await getAllSubmissions(db);
 
-          try {
-            const compressedPhotoBlob = await new Promise((resolve) => {
-              canvas.toBlob(resolve, "image/jpeg", quality);
-            });
+          // Trigger photo download for the most recent submission
+          const latestSubmission = data.find(
+            (submission) =>
+              submission.streckennummer === newSubmission.streckennummer &&
+              submission.km === newSubmission.km &&
+              submission.punktnummer === newSubmission.punktnummer &&
+              submission.met === newSubmission.met
+          );
 
-            const compressedPhoto = await imageCompression(
-              compressedPhotoBlob,
-              {
-                maxSizeMB: 0.5,
-                maxWidthOrHeight: 1920,
-                useWebWorker: true,
-              }
-            );
-            console.log(
-              "compressedFile instanceof Blob",
-              compressedPhoto instanceof Blob
-            ); // true
-            console.log(
-              `compressedFile size ${compressedPhoto.size / 1024 / 1024} MB`
-            ); // smaller than maxSizeMB
-
-            const vermarkungLabel = selectedVermarkungstrager
-              ? vermarkungOptions.find(
-                  (option) => option.value === selectedVermarkungstrager
-                )?.label
-              : "";
-
-            const statusLabel = selectedStatus
-              ? statusOptions.find((option) => option.value === selectedStatus)
-                  ?.label
-              : "";
-
-            const newSubmission = {
-              punktnummer: punktnummer,
-              streckennummer: streckennummer,
-              km: km,
-              met: met,
-              seite: seite,
-              sonstiges: sonstiges,
-              mastnummer: mastnummer,
-              selectedVermarkungstrager: vermarkungLabel,
-              selectedStatus: statusLabel,
-              sonstiges2: sonstiges2,
-              gvp: gvp,
-              currentDate: currentDate,
-              photo: compressedPhoto,
-            };
-
-            // Save the new submission to IndexedDB
-            try {
-              const db = await openDatabase();
-              //await addSubmission(db, newSubmission);
-              let data = await getAllSubmissions(db);
-              // Check if there's an existing submission with the same Streckennummer, Punktnummer, Kilometrierung
-              const index = data.findIndex(
-                (submission) =>
-                  submission.streckennummer === newSubmission.streckennummer &&
-                  submission.km === newSubmission.km &&
-                  submission.punktnummer === newSubmission.punktnummer &&
-                  submission.met === newSubmission.met
-              );
-              console.log(index);
-              if (index !== -1) {
-                // If a matching submission is found, replace it with the new submission
-                await deleteSubmission(db, data[index].id);
-              }
-              // Add the new submission
-              await addSubmission(db, newSubmission);
-              setSubmissions(data);
-              setSuccessMessage("Erfolgreich hinzugefügt");
-              setSuccessOpen(true);
-            } catch (error) {
-              console.error("Error adding or fetching submission: ", error);
-            }
-          } catch (error) {
-            console.error("Error compressing photo: ", error);
+          if (latestSubmission) {
+            downloadPhoto(latestSubmission); // Ensure the correct photo is downloaded
           }
+
+          setSubmissions(data);
+          setSuccessMessage("Erfolgreich hinzugefügt");
+          setSuccessOpen(true);
+        } catch (error) {
+          console.error("Error adding or fetching submission: ", error);
         }
       };
     };
 
-    // Read the photo data as a data URL
     reader.readAsDataURL(photo);
     reff.current.value = "";
+  };
+
+  const compressPhoto = async (image) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = image.width;
+    canvas.height = image.height;
+
+    ctx.drawImage(image, 0, 0, image.width, image.height);
+
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        },
+        "image/jpeg",
+        0.7 // Adjust compression quality as needed
+      );
+    });
   };
 
   const downloadCombinedTodayData = () => {
@@ -515,8 +460,58 @@ const MainForm = ({ reff, row, setImportData, onSubmitSuccess, setOpen }) => {
       }, 100);
     });
   };
+  const downloadPhoto = (submission) => {
+    if (!submission) {
+      console.error("No submission data for downloading");
+      return;
+    }
 
-  const downloadPhoto = () => {
+    const date = submission.currentDate.replace(/-/g, "");
+    let roundedMetWithoutLastDigit;
+
+    if (submission.met && submission.met.toString().length >= 3) {
+      const metAsNumber = parseFloat(submission.met);
+      const roundedMet = Math.round(metAsNumber / 10) * 10;
+      roundedMetWithoutLastDigit = Math.floor(roundedMet / 10);
+    } else {
+      roundedMetWithoutLastDigit = submission.met; // No rounding if met has 1 or 2 digits
+    }
+
+    let filename;
+
+    if (submission.mastnummer && submission.mastnummer.endsWith("N")) {
+      let mastnummer = submission.mastnummer.trim().slice(0, -1);
+      filename = `${submission.streckennummer}_${submission.km},${roundedMetWithoutLastDigit}_${submission.seite}_${mastnummer}_${date}.jpg`;
+    } else if (
+      submission.selectedVermarkungstrager &&
+      submission.selectedVermarkungstrager !== "Sonstiges"
+    ) {
+      filename = `${submission.streckennummer}_${submission.km},${roundedMetWithoutLastDigit}_${submission.seite}_${submission.selectedVermarkungstrager}_${date}.jpg`;
+    } else if (submission.sonstiges2) {
+      filename = `${submission.streckennummer}_${submission.km},${roundedMetWithoutLastDigit}_${submission.seite}_${submission.sonstiges2}_${date}.jpg`;
+    } else if (submission.mastnummer) {
+      filename = `${submission.streckennummer}_${submission.km},${roundedMetWithoutLastDigit}_${submission.seite}_${submission.mastnummer}_${date}.jpg`;
+    } else {
+      console.error("Invalid submission data");
+      return;
+    }
+
+    const base64Data = submission.photo.split(",")[1];
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = Array.from(byteCharacters, (char) =>
+      char.charCodeAt(0)
+    );
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: "image/jpeg" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  /*const downloadPhoto = () => {
     if (submissions.length === 0) {
       console.error("No submissions available");
       return;
@@ -578,7 +573,7 @@ const MainForm = ({ reff, row, setImportData, onSubmitSuccess, setOpen }) => {
       link.click();
       window.URL.revokeObjectURL(url);
     }
-  };
+  }; */
   const handleSuccessClose = (event, reason) => {
     if (reason === "clickaway") {
       return;

@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Button from "./Buttons";
-import DialogTitle from "@material-ui/core/DialogTitle";
 import Dialog from "@material-ui/core/Dialog";
 import Paper from "@material-ui/core/Paper";
 import MainForm from "./MainForm";
@@ -93,14 +92,13 @@ const MainFormDialogContainer = ({
           <EditIcon />
         </IconButton>
         <SimpleDialog
-          row={row}
+          row={row} // Pass an empty object for a new row
           selectedValue={selectedValue}
           open={open}
           onClose={handleClose}
           reff={reff}
           selectedRowData={selectedRowData}
           setImportData={setImportData}
-          setOpen={handleClose}
         />
       </div>
     </>
